@@ -1,0 +1,6 @@
+{
+  "name": "Reputation Manager",
+  "description": "Reputation management platform for customer reviews, feedback, and outreach.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
