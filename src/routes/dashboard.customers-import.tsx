@@ -32,6 +32,12 @@ import {
   UserCheck,
   XCircle,
   HelpCircle,
+  ChevronDown,
+  ChevronUp,
+  Sparkles,
+  ShieldAlert,
+  Star,
+  Mail,
 } from "lucide-react";
 
 export const Route = createFileRoute("/dashboard/customers-import")({
@@ -162,6 +168,8 @@ function CustomersImportPage() {
     business_model: "restaurant" | "appointment";
     discount_token: string;
   } | null>(null);
+
+  const [showWorkflowGuide, setShowWorkflowGuide] = useState(false);
   const [sending, setSending] = useState(false);
   const [lastSend, setLastSend] = useState<{ queued: number; skipped: number } | null>(null);
 
@@ -335,16 +343,112 @@ function CustomersImportPage() {
 
   return (
     <div className="p-6 md:p-8 max-w-6xl space-y-6">
-      <div>
-        <h1 className="font-display text-3xl font-semibold tracking-tight">
-          Customer List Ingestion & Review Outreach
-        </h1>
-        <p className="text-muted-foreground mt-1 text-sm max-w-3xl">
-          Upload recent customer files from POS downloads or calendar exports. We interpret whether
-          each customer has already left a review (crossing them off automatically) and queue
-          non-reviewed customers for our high-converting 2-stage outreach sequence.
-        </p>
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div>
+          <h1 className="font-display text-3xl font-semibold tracking-tight">
+            Customer List Ingestion &amp; Review Outreach
+          </h1>
+          <p className="text-muted-foreground mt-1 text-sm max-w-3xl">
+            Upload recent customer files from POS downloads or calendar exports. We interpret
+            whether each customer has already left a review (crossing them off automatically) and
+            queue non-reviewed customers for our high-converting 2-stage outreach sequence.
+          </p>
+        </div>
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => setShowWorkflowGuide(!showWorkflowGuide)}
+          className="shrink-0 gap-2 self-start md:self-auto"
+        >
+          <Sparkles className="w-4 h-4 text-primary" />
+          {showWorkflowGuide ? "Hide Funnel Workflow" : "View Funnel Workflow"}
+          {showWorkflowGuide ? (
+            <ChevronUp className="w-4 h-4" />
+          ) : (
+            <ChevronDown className="w-4 h-4" />
+          )}
+        </Button>
       </div>
+
+      {/* Visual Funnel Lifecycle Guide Banner */}
+      {showWorkflowGuide && (
+        <Card className="p-5 border-primary/30 bg-primary/5 space-y-4 animate-in fade-in duration-300">
+          <div className="flex items-center justify-between border-b border-primary/10 pb-3">
+            <div className="flex items-center gap-2">
+              <Sparkles className="w-4 h-4 text-primary" />
+              <span className="font-semibold text-sm">
+                Automated Customer Lifecycle:{" "}
+                {businessModel === "restaurant"
+                  ? "Restaurant / Walk-In Funnel"
+                  : "Appointment & Service Funnel"}
+              </span>
+            </div>
+            <Badge variant="secondary" className="text-[11px]">
+              Active Token: {activeDiscountValue}
+            </Badge>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-3 text-xs">
+            {/* Step 1 */}
+            <div className="rounded-xl border border-border bg-card p-3 space-y-1.5 shadow-xs">
+              <div className="flex items-center gap-1.5 font-bold text-foreground">
+                <span className="flex h-5 w-5 items-center justify-center rounded-full bg-primary/10 text-primary text-[10px]">
+                  1
+                </span>
+                <span>Ingest &amp; Normalize</span>
+              </div>
+              <p className="text-muted-foreground text-[11px] leading-relaxed">
+                {businessModel === "restaurant"
+                  ? "Upload weekly POS sales list (Toast, Square, Clover). Extracts name, phone/email, and visit date."
+                  : "Upload daily appointment export (Mindbody, Boulevard, Acuity). Extracts client, service type, and timestamp."}
+              </p>
+            </div>
+
+            {/* Step 2 */}
+            <div className="rounded-xl border border-border bg-card p-3 space-y-1.5 shadow-xs">
+              <div className="flex items-center gap-1.5 font-bold text-foreground">
+                <span className="flex h-5 w-5 items-center justify-center rounded-full bg-primary/10 text-primary text-[10px]">
+                  2
+                </span>
+                <span>Review Cross-Check</span>
+              </div>
+              <p className="text-muted-foreground text-[11px] leading-relaxed">
+                Matches past reviewers. <strong>4-5★ reviewers are crossed off</strong>{" "}
+                (auto-thanked). <strong>1-3★ reviewers</strong> route to Make-It-Right queue.
+              </p>
+            </div>
+
+            {/* Step 3 */}
+            <div className="rounded-xl border border-border bg-card p-3 space-y-1.5 shadow-xs">
+              <div className="flex items-center gap-1.5 font-bold text-foreground">
+                <span className="flex h-5 w-5 items-center justify-center rounded-full bg-primary/10 text-primary text-[10px]">
+                  3
+                </span>
+                <span>Stage 1: Pulse Check</span>
+              </div>
+              <p className="text-muted-foreground text-[11px] leading-relaxed">
+                Sends: <em>"How was everything?"</em> Positive ratings get instant thank you.
+                Negative ratings are intercepted privately to owner queue.
+              </p>
+            </div>
+
+            {/* Step 4 */}
+            <div className="rounded-xl border border-accent/40 bg-accent/10 p-3 space-y-1.5 shadow-xs">
+              <div className="flex items-center gap-1.5 font-bold text-foreground">
+                <span className="flex h-5 w-5 items-center justify-center rounded-full bg-accent text-accent-foreground text-[10px]">
+                  4
+                </span>
+                <span>Stage 2: 24h Review + Reward</span>
+              </div>
+              <p className="text-muted-foreground text-[11px] leading-relaxed">
+                24 hours later:{" "}
+                <em>"Please review us because reviews help small businesses grow!"</em> with 1-Tap
+                Google Link and <strong>{activeDiscountValue}</strong> token.
+              </p>
+            </div>
+          </div>
+        </Card>
+      )}
 
       {/* Step 1: Model & Discount Token Selector */}
       <Card className="p-6 border shadow-sm space-y-5">

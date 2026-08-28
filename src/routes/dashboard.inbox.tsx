@@ -40,6 +40,15 @@ type ReviewRow = {
   posted_at: string | null;
   violations: { severity: string; policy_title: string }[];
 };
+type RawReviewRow = {
+  id: string;
+  author_name: string | null;
+  rating: number | null;
+  body: string | null;
+  platform: string;
+  posted_at: string | null;
+  policy_violations?: { severity: string; policy_title: string }[] | null;
+};
 
 type Platform = "google" | "yelp" | "facebook" | "manual" | "other";
 
@@ -96,7 +105,7 @@ function InboxPage() {
       .order("posted_at", { ascending: false })
       .limit(50);
     setReviews(
-      (data ?? []).map((r: any) => ({
+      ((data as unknown as RawReviewRow[]) ?? []).map((r) => ({
         ...r,
         violations: r.policy_violations ?? [],
       })),
@@ -194,7 +203,17 @@ function InboxPage() {
     setSubmitting(true);
     try {
       const result = await ingest({
-        data: { location_id: locationId, reviews: parsed as any },
+        data: {
+          location_id: locationId,
+          reviews: parsed as Array<{
+            author_name?: string | null;
+            rating?: number | null;
+            body: string;
+            platform?: "google" | "yelp" | "facebook" | "manual" | "other";
+            posted_at?: string | null;
+            source_url?: string | null;
+          }>,
+        },
       });
       toast.success(
         `Imported ${result.inserted} · flagged ${result.flagged}${result.errors.length ? ` · ${result.errors.length} errors` : ""}`,

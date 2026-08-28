@@ -3,6 +3,7 @@
  */
 import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import type { SupabaseClient } from "@supabase/supabase-js";
 
 export type SimulateInput = {
   organization_id: string;
@@ -10,7 +11,7 @@ export type SimulateInput = {
   contract_ends_at?: string | null;
 };
 
-async function assertOrgAdmin(supabase: any, userId: string, orgId: string) {
+async function assertOrgAdmin(supabase: SupabaseClient, userId: string, orgId: string) {
   const { data: role } = await supabase
     .from("user_roles")
     .select("role")

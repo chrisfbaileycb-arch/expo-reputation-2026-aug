@@ -33,6 +33,8 @@ import {
   Bot,
   UserCheck,
   ChevronRight,
+  ChevronDown,
+  ChevronUp,
   Filter,
   ShieldAlert,
   PhoneCall,
@@ -44,6 +46,12 @@ import {
   Users,
   MapPin,
   Share2,
+  Utensils,
+  CalendarDays,
+  Gift,
+  ArrowDown,
+  Split,
+  Tag,
 } from "lucide-react";
 
 export const Route = createFileRoute("/")({
@@ -70,35 +78,136 @@ export const Route = createFileRoute("/")({
   component: LandingPage,
 });
 
+export interface DetectedPolicyViolation {
+  id: string;
+  author: string;
+  stars: number;
+  date: string;
+  body: string;
+  policyCategory: string;
+  policyRule: string;
+  severity: "critical" | "high" | "medium";
+  rationale: string;
+  removalProbability: number;
+}
+
+export interface AuditScanResult {
+  name: string;
+  category: "restaurant" | "appointment" | "auto" | "dental" | "general";
+  rating: number;
+  totalReviews: number;
+  flaggedReviews: number;
+  potentialLift: number;
+  savedRevenue: number;
+  violations: DetectedPolicyViolation[];
+  suggestedIncentive: string;
+  intakeSource: string;
+}
+
 function LandingPage() {
   const [auditQuery, setAuditQuery] = useState("");
   const [isAuditing, setIsAuditing] = useState(false);
-  const [auditResult, setAuditResult] = useState<null | {
-    name: string;
-    rating: number;
-    totalReviews: number;
-    flaggedReviews: number;
-    potentialLift: number;
-    savedRevenue: number;
-  }>(null);
+  const [auditResult, setAuditResult] = useState<AuditScanResult | null>(null);
 
   const handleRunAudit = (e?: React.FormEvent, customName?: string) => {
     if (e) e.preventDefault();
-    const query = customName || auditQuery.trim() || "Joe's Auto & Service Center";
+    const query = (customName || auditQuery || "Joe's Auto & Service Center").trim();
     setIsAuditing(true);
     setAuditResult(null);
 
     setTimeout(() => {
       setIsAuditing(false);
+      const lower = query.toLowerCase();
+      let category: AuditScanResult["category"] = "general";
+      let intakeSource = "CSV Ingestion / Square POS";
+      let suggestedIncentive = "10% Off Next Visit";
+
+      if (/diner|cafe|grill|restaurant|pizza|bistro|tacos|kitchen|bakery|bar|bbq/.test(lower)) {
+        category = "restaurant";
+        intakeSource = "Daily/Weekly POS Export (Toast, Square, Clover)";
+        suggestedIncentive = "10% Off Next Meal (or Free Appetizer)";
+      } else if (/salon|spa|barber|hair|lashes|nail|beauty|massage/.test(lower)) {
+        category = "appointment";
+        intakeSource = "Daily Calendar / Booking Export (Mindbody, Boulevard, Acuity)";
+        suggestedIncentive = "$15 Off Next Service / Free Add-On";
+      } else if (/auto|repair|tire|garage|mechanic|brakes|collision|body shop/.test(lower)) {
+        category = "auto";
+        intakeSource = "Shop Management CSV / Daily Invoice Ingestion";
+        suggestedIncentive = "$20 Off Next Service or Inspection";
+      } else if (/dental|ortho|doctor|clinic|chiro|health|physio|med/.test(lower)) {
+        category = "dental";
+        intakeSource = "Practice Management Daily Patient Intake";
+        suggestedIncentive = "Complimentary Consult or $25 Voucher";
+      }
+
+      const sampleViolations: DetectedPolicyViolation[] = [
+        {
+          id: "v1",
+          author: "Alex G. (Local Competitor)",
+          stars: 1,
+          date: "3 weeks ago",
+          body: `"Total rip-off! Go to the shop 2 miles down the street instead, way better prices and faster service."`,
+          policyCategory: "Conflict of Interest & Promotional Spam",
+          policyRule: "Google UGC Policy Sec 3.2 — Promotional & Competitor Content",
+          severity: "critical",
+          rationale:
+            "Review explicitly directs customers to a named local competitor, violating Google's clear prohibition against promotional spam and commercial conflicts of interest.",
+          removalProbability: 94,
+        },
+        {
+          id: "v2",
+          author: "Disgruntled_ExStaff_99",
+          stars: 1,
+          date: "1 month ago",
+          body: `"The management here treated me horribly and owes back wages. Worst workplace ever."`,
+          policyCategory: "Former Employee Grievance / Non-Customer",
+          policyRule: "Google Maps Policy Sec 2.1 — Off-Topic / Employment Disputes",
+          severity: "critical",
+          rationale:
+            "Review details an internal labor and workplace grievance rather than a legitimate consumer experience.",
+          removalProbability: 91,
+        },
+        {
+          id: "v3",
+          author: "Anonymous User (Bot / Duplicate)",
+          stars: 1,
+          date: "2 months ago",
+          body: `"Scam place bad bad bad !!!!"`,
+          policyCategory: "Fake / Unverified Interaction",
+          policyRule: "Google UGC Policy Sec 1.4 — Gibberish & Unsubstantiated Spam",
+          severity: "high",
+          rationale:
+            "One-sentence bot-like repetition with zero verifiable transaction or visit details.",
+          removalProbability: 86,
+        },
+        {
+          id: "v4",
+          author: "Marcus T.",
+          stars: 1,
+          date: "3 months ago",
+          body: `"The city parking meter in front of this building was broken and I got a ticket. Unacceptable!"`,
+          policyCategory: "Off-Topic / Municipal Grievance",
+          policyRule: "Google Maps Policy Sec 3.1 — Off-Topic Reviews",
+          severity: "medium",
+          rationale:
+            "Complaint regards public municipal street parking infrastructure completely outside the merchant's operational control.",
+          removalProbability: 82,
+        },
+      ];
+
       setAuditResult({
         name: query,
-        rating: 3.8,
-        totalReviews: 142,
+        category,
+        rating: 3.7,
+        totalReviews: 148,
         flaggedReviews: 4,
-        potentialLift: 0.5,
-        savedRevenue: 3200,
+        potentialLift: 0.6,
+        savedRevenue: category === "restaurant" ? 3800 : category === "auto" ? 5400 : 4200,
+        violations: sampleViolations,
+        suggestedIncentive,
+        intakeSource,
       });
-    }, 900);
+    }, 850);
   };
 
   return (
@@ -117,6 +226,7 @@ function LandingPage() {
         onRunAudit={handleRunAudit}
       />
       <TrustBar />
+      <WorkflowFunnelSection />
       <CapabilityMatrix />
       <MakeItRightDeepDive />
       <CommunityPRSection />
@@ -160,6 +270,12 @@ function Header({ onOpenAudit }: { onOpenAudit: () => void }) {
         <nav className="hidden items-center gap-6 text-sm font-medium lg:flex">
           <a href="#hero-audit" className="text-muted-foreground transition hover:text-foreground">
             Instant Audit
+          </a>
+          <a
+            href="#workflow-funnel"
+            className="text-muted-foreground transition hover:text-foreground font-semibold text-primary"
+          >
+            Funnel Workflow
           </a>
           <a href="#matrix" className="text-muted-foreground transition hover:text-foreground">
             VS Enterprise
@@ -219,25 +335,19 @@ function Hero({
   auditQuery: string;
   setAuditQuery: (v: string) => void;
   isAuditing: boolean;
-  auditResult: {
-    businessName?: string;
-    rating?: number;
-    reviewCount?: number;
-    flaggedReviews?: number;
-    potentialLift?: number;
-    savedRevenue?: number;
-  } | null;
+  auditResult: AuditScanResult | null;
   onRunAudit: (e?: React.FormEvent, customName?: string) => void;
 }) {
   const [activeTab, setActiveTab] = useState<"intercept" | "policy" | "routing" | "community">(
     "intercept",
   );
+  const [showViolations, setShowViolations] = useState(false);
 
   const sampleBusinesses = [
-    "Joe's Auto Repair",
-    "Rosewood Hair Salon",
-    "Main Street Diner",
-    "Oakridge Dental Care",
+    { label: "Main Street Diner (Restaurant)", query: "Main Street Diner" },
+    { label: "Rosewood Hair Salon (Appointments)", query: "Rosewood Hair Salon" },
+    { label: "Joe's Auto Repair (Service Shop)", query: "Joe's Auto Repair" },
+    { label: "Oakridge Dental (Healthcare)", query: "Oakridge Dental Care" },
   ];
 
   return (
@@ -257,7 +367,7 @@ function Hero({
                 <span className="relative inline-flex rounded-full h-2 w-2 bg-primary"></span>
               </span>
               <ShieldCheck className="h-3.5 w-3.5 text-accent" />
-              Built Specifically for Independent Local Businesses & Service Shops
+              Built Specifically for Independent Local Businesses &amp; Service Shops
             </div>
 
             {/* Main Headline */}
@@ -275,8 +385,8 @@ function Hero({
             <p className="mt-6 max-w-2xl text-base leading-relaxed text-muted-foreground sm:text-lg md:text-xl">
               Generic tools charge $400/mo to broadcast 1-star reviews publicly.{" "}
               <strong className="font-semibold text-foreground">Expo Proxy AI</strong> intercepts
-              unhappy customers privately into a manager recovery queue, while scanning your Google
-              Business Profile for policy-violating slander.
+              unhappy customers privately into a manager recovery queue, cross-checks review
+              statuses, and delivers 24-hour reward follow-ups.
             </p>
 
             {/* Instant Audit Capture Widget */}
@@ -293,7 +403,7 @@ function Hero({
                     type="text"
                     value={auditQuery}
                     onChange={(e) => setAuditQuery(e.target.value)}
-                    placeholder="Enter your Google Business Name or City..."
+                    placeholder="Enter your Google Business Name, City, or Shop..."
                     className="w-full rounded-xl border border-input bg-background px-4 py-3 text-sm text-foreground placeholder:text-muted-foreground/70 focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
                   />
                 </div>
@@ -304,7 +414,7 @@ function Hero({
                 >
                   {isAuditing ? (
                     <>
-                      <RefreshCw className="h-4 w-4 animate-spin" /> Scanning...
+                      <RefreshCw className="h-4 w-4 animate-spin" /> Scanning Listing...
                     </>
                   ) : (
                     <>
@@ -319,14 +429,14 @@ function Hero({
                 <span className="font-medium text-foreground/80">Try sample:</span>
                 {sampleBusinesses.map((b) => (
                   <button
-                    key={b}
+                    key={b.query}
                     onClick={() => {
-                      setAuditQuery(b);
-                      onRunAudit(undefined, b);
+                      setAuditQuery(b.query);
+                      onRunAudit(undefined, b.query);
                     }}
                     className="rounded-md border border-border/80 bg-secondary/50 px-2 py-0.5 text-[11px] hover:border-primary hover:bg-secondary transition"
                   >
-                    {b}
+                    {b.label}
                   </button>
                 ))}
               </div>
@@ -339,7 +449,7 @@ function Hero({
                       <Building2 className="h-4 w-4 text-primary" /> {auditResult.name}
                     </div>
                     <span className="rounded-full bg-accent/20 px-2 py-0.5 text-[11px] font-semibold text-accent-foreground">
-                      Scan Complete
+                      Scan Complete ({auditResult.totalReviews} total reviews)
                     </span>
                   </div>
 
@@ -353,7 +463,7 @@ function Hero({
                     <div className="rounded-lg bg-card p-2 border border-border">
                       <div className="text-muted-foreground">Policy Violations</div>
                       <div className="font-bold text-destructive text-base">
-                        {auditResult.flaggedReviews} reviews
+                        {auditResult.flaggedReviews} eligible
                       </div>
                     </div>
                     <div className="rounded-lg bg-card p-2 border border-border">
@@ -370,9 +480,73 @@ function Hero({
                     </div>
                   </div>
 
-                  <div className="mt-3 flex items-center justify-between">
-                    <p className="text-xs text-muted-foreground">
-                      Found 4 policy-violating reviews eligible for Google removal evidence.
+                  {/* Funnel Snapshot & Incentive */}
+                  <div className="mt-3 rounded-lg border border-border bg-card p-2.5 text-xs space-y-1.5">
+                    <div className="flex items-center justify-between">
+                      <span className="text-muted-foreground flex items-center gap-1">
+                        <Tag className="w-3.5 h-3.5 text-primary" /> Recommended Reward Token:
+                      </span>
+                      <strong className="text-foreground font-semibold">
+                        {auditResult.suggestedIncentive}
+                      </strong>
+                    </div>
+                    <div className="flex items-center justify-between text-[11px]">
+                      <span className="text-muted-foreground">Inferred Intake Source:</span>
+                      <span className="font-medium text-muted-foreground">
+                        {auditResult.intakeSource}
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Expandable Violations Section */}
+                  <div className="mt-3 pt-2 border-t border-primary/10">
+                    <button
+                      type="button"
+                      onClick={() => setShowViolations(!showViolations)}
+                      className="w-full flex items-center justify-between text-xs font-semibold text-primary hover:underline"
+                    >
+                      <span className="flex items-center gap-1.5">
+                        <AlertTriangle className="w-3.5 h-3.5 text-destructive" />
+                        {showViolations
+                          ? "Hide Flagged Google Policy Violations"
+                          : `View ${auditResult.violations.length} Flagged Reviews & Policy Citations`}
+                      </span>
+                      {showViolations ? (
+                        <ChevronUp className="w-4 h-4" />
+                      ) : (
+                        <ChevronDown className="w-4 h-4" />
+                      )}
+                    </button>
+
+                    {showViolations && (
+                      <div className="mt-3 space-y-2.5 max-h-60 overflow-y-auto pr-1">
+                        {auditResult.violations.map((v) => (
+                          <div
+                            key={v.id}
+                            className="rounded-lg border border-destructive/20 bg-card p-2.5 text-xs space-y-1"
+                          >
+                            <div className="flex items-center justify-between">
+                              <span className="font-semibold text-foreground">{v.author}</span>
+                              <span className="rounded bg-destructive/10 text-destructive font-bold text-[10px] px-1.5 py-0.5">
+                                {v.removalProbability}% Removal Likelihood
+                              </span>
+                            </div>
+                            <p className="text-muted-foreground italic text-[11px] leading-snug">
+                              {v.body}
+                            </p>
+                            <div className="text-[10px] text-destructive font-medium">
+                              Violation: {v.policyCategory} ({v.policyRule})
+                            </div>
+                            <p className="text-[10px] text-muted-foreground">{v.rationale}</p>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="mt-3 flex items-center justify-between pt-1">
+                    <p className="text-[11px] text-muted-foreground">
+                      Evidence packet pre-formatted with citations for Google Legal submission.
                     </p>
                     <a
                       href="/auth"
@@ -394,8 +568,8 @@ function Hero({
                 <CheckCircle2 className="h-4 w-4 text-primary" /> 0.3-Star Rating Lift Guarantee
               </span>
               <span className="flex items-center gap-1.5">
-                <CheckCircle2 className="h-4 w-4 text-primary" /> Works with Square, Toast, Clover &
-                CSVs
+                <CheckCircle2 className="h-4 w-4 text-primary" /> Works with Square, Toast, Clover
+                &amp; CSVs
               </span>
             </div>
           </div>
@@ -622,6 +796,347 @@ function Hero({
                     </div>
                   )}
                 </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+/* =========================================================================
+   SECTION 1.5: VISUAL WORKFLOW FUNNEL ARCHITECTURE (RESTAURANTS VS NON-RESTAURANTS)
+   ========================================================================= */
+function WorkflowFunnelSection() {
+  const [funnelMode, setFunnelMode] = useState<"restaurant" | "appointment">("restaurant");
+
+  return (
+    <section
+      id="workflow-funnel"
+      className="border-t border-border bg-card/60 px-4 py-20 sm:px-6 md:py-28"
+    >
+      <div className="mx-auto max-w-7xl">
+        {/* Section Header */}
+        <div className="mx-auto max-w-3xl text-center">
+          <div className="inline-flex items-center gap-2 rounded-full border border-primary/20 bg-primary/5 px-3.5 py-1 text-xs font-semibold text-primary mb-3">
+            <Sparkles className="w-3.5 h-3.5" /> End-to-End Outreach Architecture
+          </div>
+          <h2 className="font-display text-3xl font-bold tracking-tight text-foreground sm:text-4xl md:text-5xl">
+            How the Customer Outreach Funnel Works
+          </h2>
+          <p className="mt-4 text-base text-muted-foreground sm:text-lg">
+            See the exact automated workflow for each customer from initial CSV ingestion to 24-hour
+            review reward delivery — tailored for both high-volume restaurants and appointment-based
+            service businesses.
+          </p>
+
+          {/* Interactive Operating Model Switcher */}
+          <div className="mt-8 inline-flex rounded-2xl bg-secondary/80 p-1.5 border border-border shadow-sm">
+            <button
+              onClick={() => setFunnelMode("restaurant")}
+              className={`flex items-center gap-2 rounded-xl px-5 py-2.5 text-sm font-semibold transition ${
+                funnelMode === "restaurant"
+                  ? "bg-primary text-primary-foreground shadow-md"
+                  : "text-muted-foreground hover:text-foreground"
+              }`}
+            >
+              <Utensils className="w-4 h-4" />
+              <span>Restaurant / Walk-In Funnel</span>
+            </button>
+            <button
+              onClick={() => setFunnelMode("appointment")}
+              className={`flex items-center gap-2 rounded-xl px-5 py-2.5 text-sm font-semibold transition ${
+                funnelMode === "appointment"
+                  ? "bg-primary text-primary-foreground shadow-md"
+                  : "text-muted-foreground hover:text-foreground"
+              }`}
+            >
+              <CalendarDays className="w-4 h-4" />
+              <span>Appointment &amp; Service Funnel</span>
+            </button>
+          </div>
+        </div>
+
+        {/* Visual Graph Nodes */}
+        <div className="mt-14 space-y-6">
+          {/* Node 1: Ingestion Hub */}
+          <div className="rounded-2xl border border-border bg-card p-6 shadow-sm">
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-border/80 pb-4">
+              <div className="flex items-center gap-3">
+                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10 text-primary font-bold">
+                  1
+                </div>
+                <div>
+                  <div className="text-xs uppercase font-bold tracking-wider text-primary">
+                    Step 1: Contact Ingestion &amp; Intake
+                  </div>
+                  <h3 className="font-display text-lg font-bold text-foreground">
+                    {funnelMode === "restaurant"
+                      ? "Weekly or Daily POS Export Upload"
+                      : "Daily Calendar & Appointment Export Upload"}
+                  </h3>
+                </div>
+              </div>
+              <span className="rounded-full bg-secondary px-3 py-1 text-xs font-semibold text-foreground">
+                {funnelMode === "restaurant"
+                  ? "Toast, Square, Clover, CSV"
+                  : "Mindbody, Boulevard, Acuity, Dental/Auto CRM"}
+              </span>
+            </div>
+
+            <div className="mt-4 grid gap-4 md:grid-cols-3 text-xs">
+              <div className="rounded-xl border border-border/70 bg-background/60 p-3.5">
+                <span className="font-semibold text-foreground flex items-center gap-1.5 mb-1">
+                  <Clock className="w-3.5 h-3.5 text-primary" /> Trigger Cadence
+                </span>
+                <p className="text-muted-foreground leading-relaxed">
+                  {funnelMode === "restaurant"
+                    ? "Uploaded weekly on Mondays or daily after close. Processes guests by visit date & check number."
+                    : "Uploaded daily after business hours. Processes clients by completed appointment time & service type."}
+                </p>
+              </div>
+
+              <div className="rounded-xl border border-border/70 bg-background/60 p-3.5">
+                <span className="font-semibold text-foreground flex items-center gap-1.5 mb-1">
+                  <Gift className="w-3.5 h-3.5 text-primary" /> Owner Selected Reward
+                </span>
+                <p className="text-muted-foreground leading-relaxed">
+                  {funnelMode === "restaurant"
+                    ? 'Owner selects incentive: "10% Off Next Meal", "Free Appetizer", or "$10 Off $30+"'
+                    : 'Owner selects incentive: "10% Off Next Appointment", "$15 Off Service", or "Free Add-On"'}
+                </p>
+              </div>
+
+              <div className="rounded-xl border border-border/70 bg-background/60 p-3.5">
+                <span className="font-semibold text-foreground flex items-center gap-1.5 mb-1">
+                  <UserCheck className="w-3.5 h-3.5 text-primary" /> Contact Validation
+                </span>
+                <p className="text-muted-foreground leading-relaxed">
+                  Automatically validates email and phone formatting, cleans duplicates, and
+                  attaches business profile metadata.
+                </p>
+              </div>
+            </div>
+          </div>
+
+          {/* Node 2: Automated Review Cross-Check (The Smart Filter) */}
+          <div className="rounded-2xl border border-primary/30 bg-primary/5 p-6 shadow-sm">
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-primary/20 pb-4">
+              <div className="flex items-center gap-3">
+                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary text-primary-foreground font-bold">
+                  2
+                </div>
+                <div>
+                  <div className="text-xs uppercase font-bold tracking-wider text-primary">
+                    Step 2: Automated Review Cross-Off Filter
+                  </div>
+                  <h3 className="font-display text-lg font-bold text-foreground">
+                    Cross-Checks Existing Reviews Before Any Outreach
+                  </h3>
+                </div>
+              </div>
+              <span className="rounded-full bg-primary/20 px-3 py-1 text-xs font-semibold text-primary">
+                Smart Spam Prevention
+              </span>
+            </div>
+
+            <p className="mt-3 text-xs text-muted-foreground">
+              Every customer in the batch is compared against your past Google reviews, Yelp
+              feedback, and prior outreach responses:
+            </p>
+
+            <div className="mt-4 grid gap-4 md:grid-cols-3 text-xs">
+              {/* Path A */}
+              <div className="rounded-xl border border-emerald-500/30 bg-card p-3.5">
+                <div className="flex items-center justify-between font-semibold text-emerald-800 dark:text-emerald-300 mb-1.5">
+                  <span className="flex items-center gap-1.5">
+                    <CheckCircle2 className="w-4 h-4 text-emerald-600" /> Path A: Left 4-5★ Review
+                  </span>
+                  <span className="rounded bg-emerald-100 dark:bg-emerald-950 text-emerald-800 dark:text-emerald-200 text-[10px] px-1.5 py-0.5">
+                    Crossed Off
+                  </span>
+                </div>
+                <p className="text-muted-foreground leading-relaxed">
+                  Marked as{" "}
+                  <strong className="text-foreground">"Auto-Thanked / Review on File"</strong>. No
+                  redundant emails sent to preserve customer goodwill.
+                </p>
+              </div>
+
+              {/* Path B */}
+              <div className="rounded-xl border border-amber-500/30 bg-card p-3.5">
+                <div className="flex items-center justify-between font-semibold text-amber-800 dark:text-amber-300 mb-1.5">
+                  <span className="flex items-center gap-1.5">
+                    <ShieldAlert className="w-4 h-4 text-amber-600" /> Path B: Left 1-3★ Review
+                  </span>
+                  <span className="rounded bg-amber-100 dark:bg-amber-950 text-amber-800 dark:text-amber-200 text-[10px] px-1.5 py-0.5">
+                    Owner Queue
+                  </span>
+                </div>
+                <p className="text-muted-foreground leading-relaxed">
+                  Marked as <strong className="text-foreground">"Make-It-Right Priority"</strong>.
+                  Routed to private owner queue with AI apology draft. No public link sent.
+                </p>
+              </div>
+
+              {/* Path C */}
+              <div className="rounded-xl border border-primary/40 bg-card p-3.5">
+                <div className="flex items-center justify-between font-semibold text-primary mb-1.5">
+                  <span className="flex items-center gap-1.5">
+                    <Sparkles className="w-4 h-4 text-primary" /> Path C: No Review on File
+                  </span>
+                  <span className="rounded bg-primary/20 text-primary text-[10px] px-1.5 py-0.5 font-bold">
+                    Queued for Funnel
+                  </span>
+                </div>
+                <p className="text-muted-foreground leading-relaxed">
+                  Enters the <strong className="text-foreground">2-Stage Outreach Sequence</strong>{" "}
+                  (Stage 1 Pulse Check + Stage 2 Review &amp; Reward).
+                </p>
+              </div>
+            </div>
+          </div>
+
+          {/* Node 3 & Node 4: 2-Stage Customer Funnel Flow */}
+          <div className="grid gap-6 md:grid-cols-2">
+            {/* Stage 1 Card */}
+            <div className="rounded-2xl border border-border bg-card p-6 shadow-sm flex flex-col justify-between">
+              <div>
+                <div className="flex items-center justify-between border-b border-border/80 pb-3">
+                  <div className="flex items-center gap-2.5">
+                    <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary/10 text-primary font-bold text-xs">
+                      3
+                    </div>
+                    <span className="font-bold text-sm text-foreground">
+                      Stage 1 — Initial Pulse Inquiry
+                    </span>
+                  </div>
+                  <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+                    Same-Day / Immediate
+                  </span>
+                </div>
+
+                <div className="mt-4 rounded-xl border border-primary/20 bg-primary/5 p-3.5 text-xs">
+                  <div className="font-semibold text-foreground flex items-center gap-1.5 mb-1">
+                    <Mail className="w-3.5 h-3.5 text-primary" /> Customer Message:
+                  </div>
+                  <p className="text-foreground italic leading-relaxed">
+                    {funnelMode === "restaurant"
+                      ? '"How was everything during your recent visit to Main Street Diner?"'
+                      : '"How was everything during your recent appointment with Rosewood Salon?"'}
+                  </p>
+                </div>
+
+                <div className="mt-4 space-y-2 text-xs">
+                  <div className="rounded-lg border border-border p-2.5 bg-background">
+                    <div className="font-semibold text-foreground flex items-center justify-between">
+                      <span className="text-emerald-700 dark:text-emerald-300">
+                        If Customer rates 4–5 Stars:
+                      </span>
+                      <span className="text-[10px] font-bold text-emerald-600">
+                        Immediate Gratitude
+                      </span>
+                    </div>
+                    <p className="mt-1 text-muted-foreground text-[11px]">
+                      Instant on-screen appreciation:{" "}
+                      <em>
+                        "Thank you so much! Thank you for your input, it means a lot to our team."
+                      </em>
+                    </p>
+                  </div>
+
+                  <div className="rounded-lg border border-border p-2.5 bg-background">
+                    <div className="font-semibold text-foreground flex items-center justify-between">
+                      <span className="text-destructive">If Customer rates 1–3 Stars:</span>
+                      <span className="text-[10px] font-bold text-destructive">
+                        Closed-Loop Intercept
+                      </span>
+                    </div>
+                    <p className="mt-1 text-muted-foreground text-[11px]">
+                      Intercepted privately to manager with AI draft apology and resolution voucher.
+                      Zero Google link shown.
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              <div className="mt-5 pt-3 border-t border-border flex items-center justify-between text-[11px] text-muted-foreground">
+                <span>Pass-through rate: ~88% positive</span>
+                <span className="font-semibold text-primary">Schedules Stage 2 →</span>
+              </div>
+            </div>
+
+            {/* Stage 2 Card */}
+            <div className="rounded-2xl border border-accent/40 bg-accent/5 p-6 shadow-sm flex flex-col justify-between">
+              <div>
+                <div className="flex items-center justify-between border-b border-accent/20 pb-3">
+                  <div className="flex items-center gap-2.5">
+                    <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-accent text-accent-foreground font-bold text-xs">
+                      4
+                    </div>
+                    <span className="font-bold text-sm text-foreground">
+                      Stage 2 — 24-Hour Review &amp; Reward Follow-Up
+                    </span>
+                  </div>
+                  <span className="text-[10px] font-semibold uppercase tracking-wider text-accent-foreground">
+                    24 Hours Post-Response
+                  </span>
+                </div>
+
+                <div className="mt-4 rounded-xl border border-accent/30 bg-card p-3.5 text-xs">
+                  <div className="font-semibold text-foreground flex items-center gap-1.5 mb-1">
+                    <Gift className="w-3.5 h-3.5 text-accent" /> Follow-Up Email Content:
+                  </div>
+                  <p className="text-foreground italic leading-relaxed">
+                    &quot;Please review us because reviews help small businesses like ours grow! As
+                    a token of our appreciation, here is a discount on your next visit.&quot;
+                  </p>
+                </div>
+
+                <div className="mt-4 space-y-2 text-xs">
+                  <div className="rounded-lg border border-border p-2.5 bg-card">
+                    <div className="font-semibold text-foreground flex items-center justify-between">
+                      <span className="text-primary flex items-center gap-1">
+                        <Star className="w-3.5 h-3.5 fill-accent text-accent" /> 1-Tap Google
+                        Business Review Button
+                      </span>
+                      <span className="text-[10px] font-bold text-primary">Pre-Filled 5★</span>
+                    </div>
+                    <p className="mt-1 text-muted-foreground text-[11px]">
+                      Opens the verified Google Maps / Business review dialog directly with 1 tap on
+                      mobile or desktop.
+                    </p>
+                  </div>
+
+                  <div className="rounded-lg border border-border p-2.5 bg-card">
+                    <div className="font-semibold text-foreground flex items-center justify-between">
+                      <span className="text-foreground flex items-center gap-1">
+                        <Gift className="w-3.5 h-3.5 text-primary" /> Active Reward Voucher Attached
+                      </span>
+                      <span className="rounded bg-accent/20 text-accent-foreground text-[10px] px-1.5 py-0.5 font-bold">
+                        CODE: THANKYOU10
+                      </span>
+                    </div>
+                    <p className="mt-1 text-muted-foreground text-[11px]">
+                      {funnelMode === "restaurant"
+                        ? "Voucher token (e.g. 10% Off Next Meal) saved on client's phone for their next dining visit."
+                        : "Voucher token (e.g. $15 Off Next Service) applied directly to their appointment file."}
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              <div className="mt-5 pt-3 border-t border-accent/20 flex items-center justify-between text-[11px]">
+                <span className="text-muted-foreground">
+                  Average conversion to public Google review: 42%
+                </span>
+                <a
+                  href="/auth"
+                  className="font-semibold text-primary underline underline-offset-4 hover:text-primary/80"
+                >
+                  Try Funnel Demo →
+                </a>
               </div>
             </div>
           </div>

@@ -146,16 +146,17 @@ function RemovalsPage() {
         .order("created_at", { ascending: false }),
     ]);
     const removalsByViolation = new Map<string, Removal>();
-    (rs ?? []).forEach((r: any) => {
-      if (r.violation_id) removalsByViolation.set(r.violation_id, r as Removal);
+    (rs ?? []).forEach((r) => {
+      const rem = r as unknown as Removal;
+      if (rem.violation_id) removalsByViolation.set(rem.violation_id, rem);
     });
     setViolations(
-      ((vs ?? []) as any[]).map((v) => ({
+      ((vs ?? []) as unknown as Violation[]).map((v) => ({
         ...v,
         removal: removalsByViolation.get(v.id) ?? null,
-      })) as Violation[],
+      })),
     );
-    setRemovals((rs ?? []) as Removal[]);
+    setRemovals((rs ?? []) as unknown as Removal[]);
     setLoading(false);
   }, []);
 
@@ -532,8 +533,8 @@ function EditorDialog({
         review_id: v.review_id,
         organization_id: v.organization_id,
         violation_id: v.id,
-        platform: v.platform as any,
-        status: "draft" as any,
+        platform: v.platform as "google" | "yelp" | "facebook" | "manual" | "other",
+        status: "draft" as RemovalStatus,
         appeal_body: body,
         submission_url: submissionUrl || null,
         submitted_by: userData.user?.id ?? null,
